@@ -44,9 +44,11 @@ ubuntu3                 Running           10.81.127 233    Ubuntu 20.04 LTS
 Microk8s Install 
 
 ```
-root@5b11s15:~# multipass shell ubuntu2
+multipass shell ubuntu2
 [...]
-ubuntu@ubuntu2:~$  sudo snap install microk8s --classic --channel=1.19
+sudo snap install microk8s --classic --channel=1.19
+[...]
+
 Fetch and check assertions for snap "core" (10859)                                            |
 Mount snap "core" (10859)                                                                     /
 Mount snap "core" (10859)                                                                     \
