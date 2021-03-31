@@ -48,7 +48,8 @@ multipass shell ubuntu2
 [...]
 sudo snap install microk8s --classic --channel=1.19
 [...]
-
+```
+```<b>tag</b>
 Fetch and check assertions for snap "core" (10859)                                            |
 Mount snap "core" (10859)                                                                     /
 Mount snap "core" (10859)                                                                     \
@@ -56,11 +57,11 @@ Mount snap "core" (10859)
 
 
 microk8s (1.19/stable) v1.19.7 from Canonicalâœ“ installed
-
-ubuntu@ubuntu2:~$ sudo usermod -a -G microk8s $USER
-ubuntu@ubuntu2:~$ sudo chown -f -R $USER ~/.kube
-ubuntu@ubuntu2:~$ exit
-
-root@5b11s15:~# multipass shell ubuntu2
+```
+```
+sudo usermod -a -G microk8s $USER
+sudo chown -f -R $USER ~/.kube
+exit
+multipass shell ubuntu2
 [...]
 ```
