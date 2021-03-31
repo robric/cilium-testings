@@ -19,7 +19,7 @@ ID=ubuntu
 Install multipass via snap for Virtual Machine Instantiation
 
 ```
-apt install snapd
+apt install snapd -y
 snap install multipass
 ```
 
