@@ -49,7 +49,7 @@ sudo snap install microk8s --classic --channel=1.19
 
 ```
 Result:
-```
+```console
 root@5b11s15:~# multipass shell ubuntu1
 sudo snap install microk8s --classic --channel=1.19Welcome to Ubuntu 20.04.2 LTS (GNU/Linux 5.4.0-70-generic x86_64)
 
