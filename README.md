@@ -285,3 +285,142 @@ Apr 01 05:33:40 ubuntu1 microk8s.daemon-kubelet[3596]: E0401 05:33:40.574726    
 Apr 01 05:33:41 ubuntu1 microk8s.daemon-kubelet[3596]: E0401 05:33:41.660315    3596 manager.go:1123] Failed to create existing container: /kubepods/besteffort/podf850bf3d-f42d-4619-a0bc-93113fca674b/b2c1606ab54d4f36dbddc8a8a81e2fe3611fabc754dd861d26cb4d7a6a926e1b: task b2c1606ab54d4f36dbddc8a8a81e2fe3611fabc754dd861d26cb4d7a6a926e1b not found: not found
 Apr 01 05:33:44 ubuntu1 microk8s.daemon-kubelet[3596]: I0401 05:33:44.573886    3596 topology_manager.go:221] [topologymanager] RemoveContainer - Container ID: 69a74b5053b145726c33591f7a3c4291ac7702ab4defeab6fcbe75fecad101ba
 Apr 01 05:33:44 ubuntu1 microk8s.daemon-kubelet[3596]: E0401 05:33:44.574374    3596 pod_workers.go:191] Error syncing pod 913d375a-dd90-43c1-ba19-a197488a69e4 ("alpine-6b967c77f7-2l48n_default(913d375a-dd90-43c1-ba19-a197488a69e4)"), skipping: failed to "StartContainer" for "alpine" with CrashLoopBackOff: "back-off 5m0s restarting failed container=alpine pod=alpine-6b967c77f7-2l48n_default(913d375a-dd90-43c1-ba19-a197488a69e4)"
+```
+In microk8s, service configurations are located in /var/snap/microk8s/current/args.
+
+For example, we can check info from containerd, which has also explicit references to cni config locations.
+
+```console
+root@ubuntu1:/var/snap/microk8s/current/args# cat containerd
+--config ${SNAP_DATA}/args/containerd.toml
+--root ${SNAP_COMMON}/var/lib/containerd
+--state ${SNAP_COMMON}/run/containerd
+--address ${SNAP_COMMON}/run/containerd.sock
+root@ubuntu1
+
+root@ubuntu1:/var/snap/microk8s/current/args# cat containerd.toml 
+# Use config version 2 to enable new configuration fields.
+version = 2
+oom_score = 0
+
+[grpc]
+  uid = 0
+  gid = 0
+  max_recv_message_size = 16777216
+  max_send_message_size = 16777216
+
+[debug]
+  address = ""
+  uid = 0
+  gid = 0
+
+[metrics]
+  address = "127.0.0.1:1338"
+  grpc_histogram = false
+
+[cgroup]
+  path = ""
+
+
+# The 'plugins."io.containerd.grpc.v1.cri"' table contains all of the server options.
+[plugins."io.containerd.grpc.v1.cri"]
+
+  stream_server_address = "127.0.0.1"
+  stream_server_port = "0"
+  enable_selinux = false
+  sandbox_image = "k8s.gcr.io/pause:3.1"
+  stats_collect_period = 10
+  enable_tls_streaming = false
+  max_container_log_line_size = 16384
+
+  # 'plugins."io.containerd.grpc.v1.cri".containerd' contains config related to containerd
+  [plugins."io.containerd.grpc.v1.cri".containerd]
+
+    # snapshotter is the snapshotter used by containerd.
+    snapshotter = "overlayfs"
+
+    # no_pivot disables pivot-root (linux only), required when running a container in a RamDisk with runc.
+    # This only works for runtime type "io.containerd.runtime.v1.linux".
+    no_pivot = false
+
+    # default_runtime_name is the default runtime name to use.
+    default_runtime_name = "runc"
+
+    # 'plugins."io.containerd.grpc.v1.cri".containerd.runtimes' is a map from CRI RuntimeHandler strings, which specify types
+    # of runtime configurations, to the matching configurations.
+    # In this example, 'runc' is the RuntimeHandler string to match.
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+      # runtime_type is the runtime type to use in containerd e.g. io.containerd.runtime.v1.linux
+      runtime_type = "io.containerd.runc.v1"
+
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia-container-runtime]
+      # runtime_type is the runtime type to use in containerd e.g. io.containerd.runtime.v1.linux
+      runtime_type = "io.containerd.runc.v1"
+
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia-container-runtime.options]
+        BinaryName = "nvidia-container-runtime"
+
+  # 'plugins."io.containerd.grpc.v1.cri".cni' contains config related to cni
+  [plugins."io.containerd.grpc.v1.cri".cni]
+    # bin_dir is the directory in which the binaries for the plugin is kept.
+    bin_dir = "/var/snap/microk8s/2060/opt/cni/bin"
+
+    # conf_dir is the directory in which the admin places a CNI conf.
+    conf_dir = "/var/snap/microk8s/2060/args/cni-network"
+
+  # 'plugins."io.containerd.grpc.v1.cri".registry' contains config related to the registry
+  [plugins."io.containerd.grpc.v1.cri".registry]
+
+    # 'plugins."io.containerd.grpc.v1.cri".registry.mirrors' are namespace to mirror mapping for all namespaces.
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+        endpoint = ["https://registry-1.docker.io", ]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:32000"]
+        endpoint = ["http://localhost:32000"]
+```
+
+Here it is possible to get a higher  log level for containerd, since it seems that something fails here.
+
+```console
+root@ubuntu1:/var/snap/microk8s/current/args# vi containerd
+--config ${SNAP_DATA}/args/containerd.toml
+--root ${SNAP_COMMON}/var/lib/containerd
+--state ${SNAP_COMMON}/run/containerd
+--address ${SNAP_COMMON}/run/containerd.sock
+--log-level debug
+```
+
+Ultimately, after new journalctl, log show no error at all... The answer was very basic: container just stops normally. To fix that, just add "command sleep infinity" to the container spec.
+
+```
+ubuntu@ubuntu1:/var/snap/microk8s/current/args$ k edit deployment
+[...]
+    spec:
+      containers:
+      - image: alpine
+        imagePullPolicy: Always
+        name: alpine
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        command: [ "sleep" ]
+        args: [ "infinity" ]
+      dnsPolicy: ClusterFirst
+
+```
+
+And Voila...
+
+```console
+ubuntu@ubuntu1:/var/snap/microk8s/current/args$ k get pods
+NAME                      READY   STATUS    RESTARTS   AGE
+alpine-7dd86575d6-fk8q4   1/1     Running   0          4m24s
+alpine-7dd86575d6-m6cbg   1/1     Running   0          4m19s
+ubuntu@ubuntu1:/var/snap/microk8s/current/args$ 
+```
+
+## Interesting links and reading
+
+https://logz.io/blog/a-practical-guide-to-kubernetes-logging/
+
+https://tharangarajapaksha.medium.com/start-k8s-with-microk8s-85b67738b557
