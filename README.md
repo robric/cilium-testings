@@ -9,7 +9,7 @@ This project is about investigating how Cilium works and see how to integrate it
 The test infrastructure is a basic server with 2*10 CPUs/256G mem on which a set of Virtual Machines is deployed.
 
 Basic node provisionning with ubuntu focal
-```
+```console
 root@5b11s15:~# cat /etc/os-release 
 NAME="Ubuntu"
 VERSION="20.04.1 LTS (Focal Fossa)"
@@ -18,7 +18,7 @@ ID=ubuntu
 
 Install multipass via snap for Virtual Machine Instantiation
 
-```
+```command
 apt install snapd -y
 snap install multipass
 ```
@@ -46,7 +46,6 @@ Microk8s Install
 ```
 multipass shell ubuntu1
 sudo snap install microk8s --classic --channel=1.19
-
 ```
 Result:
 ```console
