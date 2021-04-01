@@ -16,6 +16,8 @@ VERSION="20.04.1 LTS (Focal Fossa)"
 ID=ubuntu
 ```
 
+## VM installation
+
 Install multipass via snap for Virtual Machine Instantiation
 
 ```command
@@ -37,7 +39,7 @@ Name                    State             IPv4             Image
 ubuntu1                 Running           10.81.127.54     Ubuntu 20.04 LTS
 ```
 
-Microk8s Install 
+## Microk8s Install 
 
 ```
 multipass shell ubuntu1
@@ -219,3 +221,53 @@ cilium-m66m7                       1/1     Running   1          20m
 coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
 ubuntu@ubuntu1:~$ 
 ```
+
+Troubleshooting CrashLoopBackoff. 
+First there is not much info in decribe... Unfortunately.
+
+```console
+Events:
+  Type     Reason     Age                   From               Message
+  ----     ------     ----                  ----               -------
+  Normal   Scheduled  12m                   default-scheduler  Successfully assigned default/alpine-6b967c77f7-nbdtd to ubuntu1
+  Normal   Pulled     12m                   kubelet            Successfully pulled image "alpine" in 2.716907009s
+  Normal   Pulled     12m                   kubelet            Successfully pulled image "alpine" in 1.558567615s
+  Normal   Pulled     12m                   kubelet            Successfully pulled image "alpine" in 1.663127517s
+  Normal   Pulled     11m                   kubelet            Successfully pulled image "alpine" in 1.243626204s
+  Normal   Created    11m (x4 over 12m)     kubelet            Created container alpine
+  Normal   Started    11m (x4 over 12m)     kubelet            Started container alpine
+  Normal   Pulling    10m (x5 over 12m)     kubelet            Pulling image "alpine"
+  Warning  BackOff    2m40s (x46 over 12m)  kubelet            Back-off restarting failed container
+ubuntu@ubuntu1:~$
+```
+Let's have a look a runtime level (containerd)
+```console
+ubuntu@ubuntu1:~$ microk8s ctr container list
+CONTAINER                                                           IMAGE                                                                                               RUNTIME                  
+0bf7cf0f5fcb2033d86c1003a8f2b14570d5bba16d03647f2b0066a5fe494ae9    k8s.gcr.io/pause:3.1                                                                                io.containerd.runc.v1    
+12fb6c5332acdd096ee3bdc6f97129f044c58a8e64248acf5ad8b7b5c8350e83    k8s.gcr.io/pause:3.1                                                                                io.containerd.runc.v1    
+14ba7077eae160aba180967bb8dc4a20688ec28e6bb963dbd937b5e40d50497c    docker.io/library/alpine@sha256:ec14c7992a97fc11425907e908340c6c3d6ff602f5f13d899e6b7027c9b4133a    io.containerd.runc.v1    
+2ebeede3e2ab091b7d4caaf1380acb7f89240ce38eb2c3aa7d0a6b64f8c9df2c    k8s.gcr.io/pause:3.1                                                                                io.containerd.runc.v1    
+3655f0408c9d6c2365ccb6d30512af2cba1b4a4742be559b916e0d899dc0b020    docker.io/coredns/coredns:1.6.6                                                                     io.containerd.runc.v1    
+3bdb9471be457e06cb5879125830f3db819648fdfea7b0ec1baac2e90eac7e2a    k8s.gcr.io/pause:3.1                                                                                io.containerd.runc.v1    
+42fde1f3214ee5dcaf9206a365fff1aee44aa6d96773d2176d684d6151fc0141    k8s.gcr.io/pause:3.1                                                                                io.containerd.runc.v1    
+5312546f50b8aede1a13fda50fce533e64a9c7deb21a95234d99ccd638993de9    k8s.gcr.io/pause:3.1                                                                                io.containerd.runc.v1    
+79b05fe4fcbdfa8845479538c0b2792842d8113131072c395c2ccd4ab7c4bbdd    docker.io/cilium/cilium:v1.6.12                                                                     io.containerd.runc.v1    
+7c7dea55854c439139ac12e2e3f7ac85d286d726904e11f3b6ba0ddaeb56792e    docker.io/cilium/operator:v1.6.12                                                                   io.containerd.runc.v1    
+af74630d4b85bc81f5ce2dcf2ef1cfd663a6ecbdd4737f09b9a67279c00d367f    docker.io/cilium/operator:v1.6.12                                                                   io.containerd.runc.v1    
+c3342dbde708715265fd738ec0973412b090b838c04e154f8b15ef160c63583d    docker.io/cilium/cilium:v1.6.12                                                                     io.containerd.runc.v1    
+c73e80f1fc979bc6c178b6edc20b37c84debd4c4f871a032c4df3e6f60936952    k8s.gcr.io/pause:3.1                                                                                io.containerd.runc.v1    
+de955a318d59a7c5e41415aec78ea67c69ca351caae37f137b69d7d73dc2c30a    docker.io/cilium/cilium:v1.6.12                                                                     io.containerd.runc.v1    
+e4fd33bf557bcb8842135290e1d005b05bf717a8baad09f5ecc4364042141630    docker.io/library/alpine@sha256:ec14c7992a97fc11425907e908340c6c3d6ff602f5f13d899e6b7027c9b4133a    io.containerd.runc.v1    
+ubuntu@ubuntu1:~$ 
+```
+No logs as well. I can get an event related. 
+```console
+ubuntu@ubuntu1:~$ microk8s ctr  events
+2021-04-01 11:50:27.322765234 +0000 UTC k8s.io /images/update {"name":"docker.io/library/alpine:latest","labels":{"io.cri-containerd.image":"managed"}}
+2021-04-01 11:50:27.584558232 +0000 UTC k8s.io /images/update {"name":"sha256:49f356fa4513676c5e22e3a8404aad6c7262cc7aaed15341458265320786c58c","labels":{"io.cri-containerd.image":"managed"}}
+2021-04-01 11:50:27.634697172 +0000 UTC k8s.io /images/update {"name":"docker.io/library/alpine:latest","labels":{"io.cri-containerd.image":"managed"}}
+2021-04-01 11:50:27.667932215 +0000 UTC k8s.io /images/update {"name":"docker.io/library/alpine@sha256:ec14c7992a97fc11425907e908340c6c3d6ff602f5f13d899e6b7027c9b4133a","labels":{"io.cri-containerd.image":"managed"}}
+2021-04-01 11:50:27.793033932 +0000 UTC k8s.io /snapshot/prepare {"key":"3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","parent":"sha256:8ea3b23f387bedc5e3cee574742d748941443c328a75f511eb37b0d8b6164130"}
+2021-04-01 11:50:28.426144194 +0000 UTC k8s.io /containers/create {"id":"3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","image":"docker.io/library/alpine@sha256:ec14c7992a97fc11425907e908340c6c3d6ff602f5f13d899e6b7027c9b4133a","runtime":{"name":"io.containerd.runc.v1"}}
+2021-04-01 11:50:28.76338842 +0000 UTC k8s.io /tasks/create {"container_id":"3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","bundle":"/var/snap/microk8s/common/run/containerd/io.containerd.runtime.v2.task/k8s.io/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","rootfs":[{"type":"overlay","source":"overlay","options":["workdir=/var/snap/microk8s/common/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/132/work","upperdir=/var/snap/microk8s/common/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/132/fs","lowerdir=/var/snap/microk8s/common/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/72/fs"]}],"io":{"stdout":"/var/snap/microk8s/common/run/containerd/io.containerd.grpc.v1.cri/containers/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929/io/885532755/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929-stdout","stderr":"/var/snap/microk8s/common/run/containerd/io.containerd.grpc.v1.cri/containers/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929/io/885532755/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929-stderr"},"pid":151350}
