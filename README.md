@@ -76,10 +76,18 @@ To see these additional updates run: apt list --upgradable
 sudo snap install microk8s --classic --channel=1.19To run a command as administrator (user "root"), use "sudo <command>".
 See "man sudo_root" for details.
 
-ubuntu@ubuntu1:~$ sudo snap install microk8s --classic --channel=1.19
-Download snap "core" (10908) from channel "stable"                 
+sudo snap install microk8s --classic --channel=1.19To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
 
-microk8s (1.19/stable) v1.19.7 from Canonicalâœ“ installed
+ubuntu@ubuntu1:~$ sudo snap install microk8s --classic --channel=1.19
+Setup snap "microk8s" (2060) security profiles                                                                                       |
+Setup snap "microk8s" (2060) security profiles                                                                                       -
+Setup snap "microk8s" (2060) security profiles                                                                                       /
+
+Run install hook of "microk8s" snap if present                                                                                       |
+
+microk8s (1.19/stable) v1.19.8 from Canonicalâœ“ installed
+ubuntu@ubuntu1:~$ 
 ```
 Configure permissions
 ```
