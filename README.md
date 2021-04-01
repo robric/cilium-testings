@@ -93,7 +93,6 @@ Tune microk8s kubectl with k alias and autocompletion / Configure permissions
 ```
 sudo usermod -a -G microk8s $USER
 sudo chown -f -R $USER ~/.kube
-echo 'source <(kubectl completion bash)' >>~/.bashrc
 echo "alias k='microk8s kubectl'" >>~/.bashrc
 echo "complete -F __start_kubectl k" >>~/.bashrc
 sudo bash -c "microk8s kubectl completion bash >/etc/bash_completion.d/kubectl"
