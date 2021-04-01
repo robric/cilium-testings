@@ -25,7 +25,7 @@ snap install multipass
 
 Launch 3 Ubuntu VMs 
 
-```
+```bash
 multipass launch -n ubuntu1 --cpus 6 --mem 8G --disk 30G
 multipass launch -n ubuntu2 --cpus 6 --mem 8G --disk 30G
 multipass launch -n ubuntu3 --cpus 6 --mem 8G --disk 30G
@@ -33,7 +33,7 @@ multipass launch -n ubuntu3 --cpus 6 --mem 8G --disk 30G
 
  Check that it all worked out
 
-```
+```console
 root@5b11s15:~# multipass list                                                  
 Name                    State             IPv4             Image
 ubuntu1                 Running           10.81.127.54     Ubuntu 20.04 LTS
