@@ -159,3 +159,63 @@ serviceaccount "calico-kube-controllers" deleted
 Cilium is enabled
 ubuntu@ubuntu1:~$ 
 ```
+
+You can check the pods that have been created as well as the new crds
+```
+ubuntu@ubuntu1:~$ k get pods -A
+NAMESPACE     NAME                               READY   STATUS    RESTARTS   AGE
+kube-system   cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          12m
+kube-system   cilium-m66m7                       1/1     Running   1          12m
+ubuntu@ubuntu1:~$ k get crds
+NAME                              CREATED AT
+ciliumnetworkpolicies.cilium.io   2021-04-01T10:54:36Z
+ciliumendpoints.cilium.io         2021-04-01T10:54:37Z
+ciliumnodes.cilium.io             2021-04-01T10:54:38Z
+ciliumidentities.cilium.io        2021-04-01T10:54:39Z
+ubuntu@ubuntu1:~$ 
+ubuntu@ubuntu1:~$ k create deployment alpine --image=alpine --replicas=2
+deployment.apps/alpine created
+ubuntu@ubuntu1:~$ k get pods
+NAME                      READY   STATUS             RESTARTS   AGE
+alpine-6b967c77f7-22w5j   0/1     CrashLoopBackOff   4          2m26s
+alpine-6b967c77f7-568sf   0/1     CrashLoopBackOff   4          2m26s
+ubuntu@ubuntu1:~$ ^
+```
+Damn, pod creation failed, let's see what describe says.
+
+```console
+ubuntu@ubuntu1:~$ k describe pod
+Name:         alpine-6b967c77f7-568sf
+Namespace:    default
+[...]
+Events:
+  Type     Reason             Age                  From               Message
+  ----     ------             ----                 ----               -------
+  Normal   Scheduled          117s                 default-scheduler  Successfully assigned default/alpine-6b967c77f7-568sf to ubuntu1
+  Normal   Pulled             110s                 kubelet            Successfully pulled image "alpine" in 4.225047254s
+  Normal   Pulled             106s                 kubelet            Successfully pulled image "alpine" in 1.777492466s
+  Normal   Pulling            92s (x3 over 115s)   kubelet            Pulling image "alpine"
+  Normal   Pulled             90s                  kubelet            Successfully pulled image "alpine" in 1.181367686s
+  Normal   Created            90s (x3 over 109s)   kubelet            Created container alpine
+  Normal   Started            89s (x3 over 109s)   kubelet            Started container alpine
+  Warning  BackOff            88s (x3 over 104s)   kubelet            Back-off restarting failed container
+  Warning  MissingClusterDNS  76s (x10 over 116s)  kubelet            pod: "alpine-6b967c77f7-568sf_default(a19f226f-1b15-49b6-b28b-8b3a3bc05a5e)". kubelet does not have ClusterDNS IP configured and cannot create Pod using "ClusterFirst" policy. Falling back to "Default" policy.
+ubuntu@ubuntu1:~$ microk8s enable dns
+Enabling DNS
+Applying manifest
+serviceaccount/coredns created
+configmap/coredns created
+deployment.apps/coredns created
+service/kube-dns created
+clusterrole.rbac.authorization.k8s.io/coredns created
+clusterrolebinding.rbac.authorization.k8s.io/coredns created
+Restarting kubelet
+DNS is enabled
+
+ubuntu@ubuntu1:~$ k get pods -n kube-system
+NAME                               READY   STATUS    RESTARTS   AGE
+cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          20m
+cilium-m66m7                       1/1     Running   1          20m
+coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
+ubuntu@ubuntu1:~$ 
+```
