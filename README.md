@@ -223,7 +223,7 @@ ubuntu@ubuntu1:~$
 ```
 
 Troubleshooting CrashLoopBackoff. 
-First there is not much info in decribe... Unfortunately.
+First there is not much info in describe... Unfortunately.
 
 ```console
 Events:
@@ -240,6 +240,7 @@ Events:
   Warning  BackOff    2m40s (x46 over 12m)  kubelet            Back-off restarting failed container
 ubuntu@ubuntu1:~$
 ```
+Nor there is in log (kubectl log or /var/logs/pods/ID)
 Let's have a look a runtime level (containerd)
 ```console
 ubuntu@ubuntu1:~$ microk8s ctr container list
@@ -271,3 +272,16 @@ ubuntu@ubuntu1:~$ microk8s ctr  events
 2021-04-01 11:50:27.793033932 +0000 UTC k8s.io /snapshot/prepare {"key":"3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","parent":"sha256:8ea3b23f387bedc5e3cee574742d748941443c328a75f511eb37b0d8b6164130"}
 2021-04-01 11:50:28.426144194 +0000 UTC k8s.io /containers/create {"id":"3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","image":"docker.io/library/alpine@sha256:ec14c7992a97fc11425907e908340c6c3d6ff602f5f13d899e6b7027c9b4133a","runtime":{"name":"io.containerd.runc.v1"}}
 2021-04-01 11:50:28.76338842 +0000 UTC k8s.io /tasks/create {"container_id":"3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","bundle":"/var/snap/microk8s/common/run/containerd/io.containerd.runtime.v2.task/k8s.io/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929","rootfs":[{"type":"overlay","source":"overlay","options":["workdir=/var/snap/microk8s/common/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/132/work","upperdir=/var/snap/microk8s/common/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/132/fs","lowerdir=/var/snap/microk8s/common/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/72/fs"]}],"io":{"stdout":"/var/snap/microk8s/common/run/containerd/io.containerd.grpc.v1.cri/containers/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929/io/885532755/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929-stdout","stderr":"/var/snap/microk8s/common/run/containerd/io.containerd.grpc.v1.cri/containers/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929/io/885532755/3cfb678e10f8481394a688d67aa2c9429f83c062cbb7ee0fb6d2e2a352a86929-stderr"},"pid":151350}
+```
+
+journalctl has a bit more info, but nothing self-explanatory
+
+```
+ubuntu@ubuntu1:~$ journalctl -f -u snap.microk8s.daemon-kubelet 
+
+Apr 01 05:33:40 ubuntu1 microk8s.daemon-kubelet[3596]: E0401 05:33:40.153836    3596 manager.go:1123] Failed to create existing container: /kubepods/besteffort/podf850bf3d-f42d-4619-a0bc-93113fca674b/55ca1d0ae66aaa48f2045db270f416c471a37a03c490db43f38153a960b0af07: task 55ca1d0ae66aaa48f2045db270f416c471a37a03c490db43f38153a960b0af07 not found: not found
+Apr 01 05:33:40 ubuntu1 microk8s.daemon-kubelet[3596]: I0401 05:33:40.573887    3596 topology_manager.go:221] [topologymanager] RemoveContainer - Container ID: 361281aac25652d21c627b18bc71ebd71415bad33dc1964d8d7f4c46dca9d68b
+Apr 01 05:33:40 ubuntu1 microk8s.daemon-kubelet[3596]: E0401 05:33:40.574726    3596 pod_workers.go:191] Error syncing pod 77c32b49-e7a5-419b-a11e-b12fbcd00132 ("alpine-6b967c77f7-nbdtd_default(77c32b49-e7a5-419b-a11e-b12fbcd00132)"), skipping: failed to "StartContainer" for "alpine" with CrashLoopBackOff: "back-off 5m0s restarting failed container=alpine pod=alpine-6b967c77f7-nbdtd_default(77c32b49-e7a5-419b-a11e-b12fbcd00132)"
+Apr 01 05:33:41 ubuntu1 microk8s.daemon-kubelet[3596]: E0401 05:33:41.660315    3596 manager.go:1123] Failed to create existing container: /kubepods/besteffort/podf850bf3d-f42d-4619-a0bc-93113fca674b/b2c1606ab54d4f36dbddc8a8a81e2fe3611fabc754dd861d26cb4d7a6a926e1b: task b2c1606ab54d4f36dbddc8a8a81e2fe3611fabc754dd861d26cb4d7a6a926e1b not found: not found
+Apr 01 05:33:44 ubuntu1 microk8s.daemon-kubelet[3596]: I0401 05:33:44.573886    3596 topology_manager.go:221] [topologymanager] RemoveContainer - Container ID: 69a74b5053b145726c33591f7a3c4291ac7702ab4defeab6fcbe75fecad101ba
+Apr 01 05:33:44 ubuntu1 microk8s.daemon-kubelet[3596]: E0401 05:33:44.574374    3596 pod_workers.go:191] Error syncing pod 913d375a-dd90-43c1-ba19-a197488a69e4 ("alpine-6b967c77f7-2l48n_default(913d375a-dd90-43c1-ba19-a197488a69e4)"), skipping: failed to "StartContainer" for "alpine" with CrashLoopBackOff: "back-off 5m0s restarting failed container=alpine pod=alpine-6b967c77f7-2l48n_default(913d375a-dd90-43c1-ba19-a197488a69e4)"
