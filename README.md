@@ -172,6 +172,7 @@ coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
 
 ### Yet Another CrashLoopBackoff Troubleshooting 
 
+```
 ubuntu@ubuntu1:~$ k create deployment alpine --image=alpine --replicas=2
 deployment.apps/alpine created
 ubuntu@ubuntu1:~$ k get pods
