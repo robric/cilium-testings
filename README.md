@@ -29,7 +29,9 @@ Launch a few Ubuntu VM
 
 ```bash
 multipass launch -n ubuntu-k8smaster --cpus 6 --mem 8G --disk 30G
- ```
+multipass launch -n ubuntu-k8sworker-1 --cpus 6 --mem 8G --disk 30G
+multipass launch -n ubuntu-k8sworker-2 --cpus 6 --mem 8G --disk 30G
+```
 
  Check that it all worked out
 
@@ -38,9 +40,10 @@ root@b1s1-node1:~# multipass list
 ubuntu-k8smaster        Running           10.57.89.33      Ubuntu 20.04 LTS
 ubuntu-k8sworker-1      Running           10.57.89.165     Ubuntu 20.04 LTS
 ubuntu-k8sworker-2      Running           10.57.89.205     Ubuntu 20.04 LTS```
+```
 
 ## Microk8s Install 
-
+Type
 ```
 multipass shell ubuntu-k8smaster
 sudo snap install microk8s --classic
