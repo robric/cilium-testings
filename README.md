@@ -2,7 +2,7 @@
 
 ## Objectives
 
-This objective is simply to have a look at Cilium by installing it in a microk8s VM.
+This objective is simply to have a look at Cilium by installing it in a set of microk8s VMs.
 
 ## Testing Infrastructure
 
@@ -42,7 +42,7 @@ ubuntu-k8sworker-1      Running           10.57.89.165     Ubuntu 20.04 LTS
 ubuntu-k8sworker-2      Running           10.57.89.205     Ubuntu 20.04 LTS```
 ```
 
-## Microk8s Install 
+## Microk8s Install (single/master node)
 Type
 ```
 multipass shell ubuntu-k8smaster
@@ -148,10 +148,10 @@ ciliumidentities.cilium.io        2021-04-01T10:54:39Z
 ubuntu@ubuntu1:~$ 
 ```
 
-## multi node cluster
+## Multi node cluster
 
-Deploy microk8s kubernetees on a second node (worker) and the appropriate permission settings.
-Create several worker nodes in multipass on top of the master.
+Deploy microk8s kubernetees the additional nodes (worker) with the appropriate permission settings.
+
 ```console
 root@b1s1-node1:~# multipass list
 Name                    State             IPv4             Image
