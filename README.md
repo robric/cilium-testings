@@ -512,6 +512,124 @@ Namespace:      default
 ubuntu@ubuntu-k8smaster:~$ 
 ```
 
+The problem is reported by kubelet. After quick sanity check, we check the kubelet logs (btw kubelet is called kubelite in microk8s).
+
+```console
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ k get nodes -o wide
+NAME                 STATUS   ROLES    AGE     VERSION                    INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+ubuntu-k8sworker-2   Ready    <none>   4h54m   v1.21.4-3+e5758f73ed2a04   10.57.89.205   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu-k8sworker-1   Ready    <none>   5h40m   v1.21.4-3+e5758f73ed2a04   10.57.89.165   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu-k8smaster     Ready    <none>   7h20m   v1.21.4-3+e5758f73ed2a04   10.57.89.33    <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ 
+
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ k get pods -n kube-system
+NAME                               READY   STATUS    RESTARTS   AGE
+cilium-operator-6997f6d645-8j9wm   1/1     Running   0          4h45m
+cilium-bqnsc                       1/1     Running   0          4h45m
+cilium-vhdkn                       1/1     Running   0          4h45m
+cilium-c559d                       1/1     Running   1          4h45m
+coredns-7f9c69c78c-zgmdg           0/1     Running   77         6h14m
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ 
+
+root@ubuntu-k8sworker-1:/var/log# journalctl -f -u snap.microk8s.daemon-kubelite
+-- Logs begin at Tue 2021-06-22 06:15:55 PDT. --
+Sep 09 13:18:38 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:38.246991   98983 pod_workers.go:190] "Error syncing pod, skipping" err="failed to \"CreatePodSandbox\" for \"nginx-deployment-66b6c48dd5-8tznf_default(7f759422-7124-45a1-b5e3-64df840a6b74)\" with CreatePodSandboxError: \"Failed to create sandbox for pod \\\"nginx-deployment-66b6c48dd5-8tznf_default(7f759422-7124-45a1-b5e3-64df840a6b74)\\\": rpc error: code = Unknown desc = failed to setup network for sandbox \\\"3382c59c50a96f06dbf51260bf13b920e499eef8d29a5056bc22a97e20662754\\\": error getting ClusterInformation: connection is unauthorized: Unauthorized\"" pod="default/nginx-deployment-66b6c48dd5-8tznf" podUID=7f759422-7124-45a1-b5e3-64df840a6b74
+Sep 09 13:18:48 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:48.603817   98983 authentication.go:63] "Unable to authenticate the request" err="[invalid bearer token, serviceaccounts \"calico-node\" not found]"
+Sep 09 13:18:53 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:53.163053   98983 authentication.go:63] "Unable to authenticate the request" err="[invalid bearer token, serviceaccounts \"calico-node\" not found]"
+Sep 09 13:18:53 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:53.236631   98983 authentication.go:63] "Unable to authenticate the request" err="[invalid bearer token, serviceaccounts \"calico-node\" not found]"
+Sep 09 13:18:53 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:53.244914   98983 remote_runtime.go:116] "RunPodSandbox from runtime service failed" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"a83bc7306739462809393ffc0ba5e349858a4ec2ed923130a420f94af1f36a70\": error getting ClusterInformation: connection is unauthorized: Unauthorized"
+Sep 09 13:18:53 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:53.245007   98983 kuberuntime_sandbox.go:68] "Failed to create sandbox for pod" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"a83bc7306739462809393ffc0ba5e349858a4ec2ed923130a420f94af1f36a70\": error getting ClusterInformation: connection is unauthorized: Unauthorized" pod="default/nginx-deployment-66b6c48dd5-8tznf"
+Sep 09 13:18:53 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:53.245097   98983 kuberuntime_manager.go:790] "CreatePodSandbox for pod failed" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"a83bc7306739462809393ffc0ba5e349858a4ec2ed923130a420f94af1f36a70\": error getting ClusterInformation: connection is unauthorized: Unauthorized" pod="default/nginx-deployment-66b6c48dd5-8tznf"
+Sep 09 13:18:53 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:53.245195   98983 pod_workers.go:190] "Error syncing pod, skipping" err="failed to \"CreatePodSandbox\" for \"nginx-deployment-66b6c48dd5-8tznf_default(7f759422-7124-45a1-b5e3-64df840a6b74)\" with CreatePodSandboxError: \"Failed to create sandbox for pod \\\"nginx-deployment-66b6c48dd5-8tznf_default(7f759422-7124-45a1-b5e3-64df840a6b74)\\\": rpc error: code = Unknown desc = failed to setup network for sandbox \\\"a83bc7306739462809393ffc0ba5e349858a4ec2ed923130a420f94af1f36a70\\\": error getting ClusterInformation: connection is unauthorized: Unauthorized\"" pod="default/nginx-deployment-66b6c48dd5-8tznf" podUID=7f759422-7124-45a1-b5e3-64df840a6b74
+Sep 09 13:18:58 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:58.096328   98983 remote_runtime.go:144] "StopPodSandbox from runtime service failed" err="rpc error: code = Unknown desc = failed to destroy network for sandbox \"2a44ad549148a03f2a94647191ff1c80332c61f9ee8c6110d09600fff2ef1a58\": error getting ClusterInformation: connection is unauthorized: Unauthorized" podSandboxID="2a44ad549148a03f2a94647191ff1c80332c61f9ee8c6110d09600fff2ef1a58"
+Sep 09 13:18:58 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:18:58.096416   98983 kuberuntime_gc.go:176] "Failed to stop sandbox before removing" err="rpc error: code = Unknown desc = failed to destroy network for sandbox \"2a44ad549148a03f2a94647191ff1c80332c61f9ee8c6110d09600fff2ef1a58\": error getting ClusterInformation: connection is unauthorized: Unauthorized" sandboxID="2a44ad549148a03f2a94647191ff1c80332c61f9ee8c6110d09600fff2ef1a58"
+Sep 09 13:19:00 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:19:00.605810   98983 authentication.go:63] "Unable to authenticate the request" err="[invalid bearer token, serviceaccounts \"calico-node\" not found]"
+Sep 09 13:19:06 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:19:06.259402   98983 remote_runtime.go:116] "RunPodSandbox from runtime service failed" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"e3b7881f804e8e853d2ba862b755545eb85c635191de5a755f6cac2bc2fe88cd\": error getting ClusterInformation: connection is unauthorized: Unauthorized"
+Sep 09 13:19:06 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:19:06.259501   98983 kuberuntime_sandbox.go:68] "Failed to create sandbox for pod" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"e3b7881f804e8e853d2ba862b755545eb85c635191de5a755f6cac2bc2fe88cd\": error getting ClusterInformation: connection is unauthorized: Unauthorized" pod="default/nginx-deployment-66b6c48dd5-8tznf"
+Sep 09 13:19:06 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:19:06.259533   98983 kuberuntime_manager.go:790] "CreatePodSandbox for pod failed" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"e3b7881f804e8e853d2ba862b755545eb85c635191de5a755f6cac2bc2fe88cd\": error getting ClusterInformation: connection is unauthorized: Unauthorized" pod="default/nginx-deployment-66b6c48dd5-8tznf"
+Sep 09 13:19:06 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:19:06.259642   98983 pod_workers.go:190] "Error syncing pod, skipping" err="failed to \"CreatePodSandbox\" for \"nginx-deployment-66b6c48dd5-8tznf_default(7f759422-7124-45a1-b5e3-64df840a6b74)\" with CreatePodSandboxError: \"Failed to create sandbox for pod \\\"nginx-deployment-66b6c48dd5-8tznf_default(7f759422-7124-45a1-b5e3-64df840a6b74)\\\": rpc error: code = Unknown desc = failed to setup network for sandbox \\\"e3b7881f804e8e853d2ba862b755545eb85c635191de5a755f6cac2bc2fe88cd\\\": error getting ClusterInformation: connection is unauthorized: Unauthorized\"" pod="default/nginx-deployment-66b6c48dd5-8tznf" podUID=7f759422-7124-45a1-b5e3-64df840a6b74
+Sep 09 13:19:12 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: I0909 13:19:12.129949   98983 client.go:360] parsed scheme: "passthrough"
+Sep 09 13:19:12 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: I0909 13:19:12.130042   98983 passthrough.go:48] ccResolverWrapper: sending update to cc: {[{unix:///var/snap/microk8s/2407/var/kubernetes/backend//kine.sock  <nil> 0 <nil>}] <nil> <nil>}
+Sep 09 13:19:12 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: I0909 13:19:12.130065   98983 clientconn.go:948] ClientConn switching balancer to "pick_first"
+Sep 09 13:19:17 ubuntu-k8sworker-1 microk8s.daemon-kubelite[98983]: E0909 13:19:17.253496   98983 remote_runtime.go:116] "RunPodSandbox from runtime service failed" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"ecf42f7d111cdf750bed3c8b831c8a261c818c251e87287d713de3a76fdfc7a9\": error getting ClusterInformation: connection is unauthorized: Unauthorized"
+```
+So we're having some issues there !  After some digging (complains with network and authentication), we see that cilium cni is not part of the kubelet cni directory. Again in microk8S things are all under this snap directory (just issue ps aux | grep kube and check cmdline options to find it ).
+
+Start with refreshing certificates.
+```
+ubuntu@ubuntu-k8sworker-2:~$ sudo microk8s refresh-certs
+Taking a backup of the current certificates under /var/snap/microk8s/2407/var/log/ca-backup/
+Creating new certificates
+Can't load /root/.rnd into RNG
+140462069982656:error:2406F079:random number generator:RAND_load_file:Cannot open file:../crypto/rand/randfile.c:88:Filename=/root/.rnd
+Can't load /root/.rnd into RNG
+140367804642752:error:2406F079:random number generator:RAND_load_file:Cannot open file:../crypto/rand/randfile.c:88:Filename=/root/.rnd
+Signature ok
+subject=C = GB, ST = Canonical, L = Canonical, O = Canonical, OU = Canonical, CN = 127.0.0.1
+Getting CA Private Key
+```
+Next fix the cni config.
+```
+### options for kubelet ###
+ubuntu@ubuntu-k8sworker-2:~$ cat /var/snap/microk8s/2407/args/kubelet
+--kubeconfig=${SNAP_DATA}/credentials/kubelet.config
+--cert-dir=${SNAP_DATA}/certs
+--client-ca-file=${SNAP_DATA}/certs/ca.crt
+--anonymous-auth=false
+--network-plugin=cni
+--root-dir=${SNAP_COMMON}/var/lib/kubelet
+--fail-swap-on=false
+--cni-conf-dir=${SNAP_DATA}/args/cni-network/
+--cni-bin-dir=${SNAP_DATA}/opt/cni/bin/
+--feature-gates=DevicePlugins=true
+--eviction-hard="memory.available<100Mi,nodefs.available<1Gi,imagefs.available<1Gi"
+--container-runtime=remote
+--container-runtime-endpoint=${SNAP_COMMON}/run/containerd.sock
+--containerd=${SNAP_COMMON}/run/containerd.sock
+--node-labels="microk8s.io/cluster=true"
+--authentication-token-webhook=true
+--cluster-domain=cluster.local
+--cluster-dns=10.152.183.10
+### check the cni-network folder (cni config)
+ubuntu@ubuntu-k8sworker-2:~$ ls /var/snap/microk8s/2407/args/cni-network/
+10-calico.conflist  calico-kubeconfig  cni.yaml  cni.yaml.backup
+ubuntu@ubuntu-k8sworker-2:~$
+```
+For some reason, cilium is missing (and calico was obviously not cleaned up properly). So pick the config from the master (which work).
+```console
+### run on master ###
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ ls
+05-cilium-cni.conf  10-calico.conflist  calico-kubeconfig  cni.yaml.backup  cni.yaml.disabled
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ cat 05-cilium-cni.conf 
+{
+    "cniVersion": "0.3.1",
+    "name": "cilium",
+    "type": "cilium-cni",
+    "enable-debug": true
+}
+### copy to worker ###
+
+ubuntu@ubuntu-k8sworker-2:/var/snap/microk8s/2407/args/cni-network$ sudo -i
+root@ubuntu-k8sworker-2:~# cd /var/snap/microk8s/2407/args/cni-network
+root@ubuntu-k8sworker-2:/var/snap/microk8s/2407/args/cni-network#  cat << EOF >> 05-cilium-cni.conf
+> {
+>     "cniVersion": "0.3.1",
+>     "name": "cilium",
+>     "type": "cilium-cni",
+>     "enable-debug": true
+> }
+> EOF
+```
+After these steps on all workers, the pods can be deployed on all workers.
+```console
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ k get pods -o wide
+NAME                                READY   STATUS    RESTARTS   AGE     IP           NODE                 NOMINATED NODE   READINESS GATES
+nginx-deployment-66b6c48dd5-2kzwn   1/1     Running   0          5h34m   10.0.0.107   ubuntu-k8smaster     <none>           <none>
+nginx-deployment-66b6c48dd5-8tznf   1/1     Running   1          5h34m   10.0.1.199   ubuntu-k8sworker-1   <none>           <none>
+nginx-deployment-66b6c48dd5-vzz99   1/1     Running   0          5h34m   10.0.2.174   ubuntu-k8sworker-2   <none>           <none>
+ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ 
+```
+
 ## Upgrade
 Tried but did not work
 
