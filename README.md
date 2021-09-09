@@ -34,10 +34,10 @@ multipass launch -n ubuntu-k8smaster --cpus 6 --mem 8G --disk 30G
  Check that it all worked out
 
 ```console
-root@5b11s15:~# multipass list                                                  
-Name                    State             IPv4             Image
-ubuntu-k8smaster               Running           10.81.127.54     Ubuntu 20.04 LTS
-```
+root@b1s1-node1:~# multipass list
+ubuntu-k8smaster        Running           10.57.89.33      Ubuntu 20.04 LTS
+ubuntu-k8sworker-1      Running           10.57.89.165     Ubuntu 20.04 LTS
+ubuntu-k8sworker-2      Running           10.57.89.205     Ubuntu 20.04 LTS```
 
 ## Microk8s Install 
 
@@ -47,7 +47,8 @@ sudo snap install microk8s --classic
 ```
 Result:
 ```console
-root@5b11s15:~# multipass shell ubuntu-k8smaster
+root@b1s1-node1:~# multipass shell ubuntu-k8smaster
+Welcome to Ubuntu 20.04.2 LTS (GNU/Linux 5.4.0-80-generic x86_64)
 [...]
 ubuntu@ubuntu-k8smaster:/etc$ sudo snap install microk8s --classic
 microk8s (1.21/stable) v1.21.4 from Canonicalâœ“ installed
@@ -143,24 +144,7 @@ ciliumnodes.cilium.io             2021-04-01T10:54:38Z
 ciliumidentities.cilium.io        2021-04-01T10:54:39Z
 ubuntu@ubuntu1:~$ 
 
-ubuntu@ubuntu1:~$ microk8s enable dns
-Enabling DNS
-Applying manifest
-serviceaccount/coredns created
-configmap/coredns created
-deployment.apps/coredns created
-service/kube-dns created
-clusterrole.rbac.authorization.k8s.io/coredns created
-clusterrolebinding.rbac.authorization.k8s.io/coredns created
-Restarting kubelet
-DNS is enabled
 
-ubuntu@ubuntu1:~$ k get pods -n kube-system
-NAME                               READY   STATUS    RESTARTS   AGE
-cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          20m
-cilium-m66m7                       1/1     Running   1          20m
-coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
-ubuntu@ubuntu1:~$ 
 ```
 
 ## Appendix / Lesson learnt
