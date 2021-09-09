@@ -144,8 +144,83 @@ ciliumnodes.cilium.io             2021-04-01T10:54:38Z
 ciliumidentities.cilium.io        2021-04-01T10:54:39Z
 ubuntu@ubuntu1:~$ 
 
+## multi node cluster
+
+Deploy microk8s kubernetees on a second node (worker) and the appropriate permission settings.
+```
+multipass shell ubuntu-k8sworker-1
+sudo snap install microk8s --classic
+sudo usermod -a -G microk8s $USER
+sudo chown -f -R $USER ~/.kube
+exit
+multipass shell ubuntu-k8sworker-1
+sudo snap install microk8s --classic
+```
+```
+
+root@b1s1-node1:~# multipass list
+Name                    State             IPv4             Image
+ubuntu-k8smaster        Running           10.57.89.33      Ubuntu 20.04 LTS
+ubuntu-k8sworker-1      Running           10.57.89.165     Ubuntu 20.04 LTS
+ubuntu-k8sworker-2      Running           10.57.89.205     Ubuntu 20.04 LTS
+root@b1s1-node1:~# multipass shell ubuntu-k8sworker-1
+[...]
+ubuntu@ubuntu-k8sworker-1:~$ sudo snap install microk8s --classic
+microk8s (1.21/stable) v1.21.4 from Canonicalâœ“ installed
+[...]
+```
+
+On master node, move back to calico (if cilium is running) and get the commands for copy-pasting to worker node
+``` 
+microk8s disable cilium
+microk8s add-node
+```
+Example
+```
+#### On master node #####
+ubuntu@ubuntu-k8smaster:/etc$ microk8s disable cilium
+Disabling Cilium
+[...]
+ubuntu@ubuntu-k8smaster:~$ microk8s add-node
+From the node you wish to join to this cluster, run the following:
+microk8s join 10.57.89.33:25000/78dfefed0dcd09e2ad16a9ecc24ea33e/2c6583b08291
+
+If the node you are adding is not reachable through the default interface you can use one of the following:
+ microk8s join 10.57.89.33:25000/78dfefed0dcd09e2ad16a9ecc24ea33e/2c6583b08291
+ microk8s join 10.0.0.199:25000/78dfefed0dcd09e2ad16a9ecc24ea33e/2c6583b08291
+ubuntu@ubuntu-k8smaster:~$
+
+#### On worker node #####
+
+ubuntu@ubuntu-k8sworker-1:~$ microk8s join 10.57.89.33:25000/5acea0af7895b2ab3f2b10dd89af284a/2c6583b08291
+Contacting cluster at 10.57.89.33
+Waiting for this node to finish joining the cluster. ..  
+ubuntu@ubuntu-k8sworker-1:~$
+```
+
+Wait for some time for things to complete... You should see the worker node added to the cluster.
 
 ```
+ubuntu@ubuntu-k8smaster:~$ k get nodes
+NAME                 STATUS   ROLES    AGE     VERSION
+ubuntu-k8sworker-1   Ready    <none>   2m51s   v1.21.4-3+e5758f73ed2a04
+ubuntu-k8smaster     Ready    <none>   103m    v1.21.4-3+e5758f73ed2a04
+ubuntu@ubuntu-k8smaster:~$ 
+```
+Repeat the same on a second worker node. You should be fine
+If you want to run cilium you can re-enable it after all nodes have joined. 
+```
+ubuntu@ubuntu-k8smaster:~$ microk8s enable cilium
+Addon helm3 is already enabled.
+[...]
+ubuntu@ubuntu-k8smaster:/etc$ k get nodes -o wide
+NAME                 STATUS   ROLES    AGE     VERSION                    INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+ubuntu-k8sworker-1   Ready    <none>   50m     v1.21.4-3+e5758f73ed2a04   10.57.89.165   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu-k8smaster     Ready    <none>   151m    v1.21.4-3+e5758f73ed2a04   10.57.89.33    <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu-k8sworker-2   Ready    <none>   4m47s   v1.21.4-3+e5758f73ed2a04   10.57.89.205   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu@ubuntu-k8smaster:/etc$ 
+```
+k apply -f https://k8s.io/examples/controllers/nginx-deployment.yaml
 
 ## Appendix / Lesson learnt
 
