@@ -148,17 +148,8 @@ ubuntu@ubuntu1:~$
 ## multi node cluster
 
 Deploy microk8s kubernetees on a second node (worker) and the appropriate permission settings.
-```
-multipass shell ubuntu-k8sworker-1
-sudo snap install microk8s --classic
-sudo usermod -a -G microk8s $USER
-sudo chown -f -R $USER ~/.kube
-exit
-multipass shell ubuntu-k8sworker-1
-sudo snap install microk8s --classic
-```
-```
-
+Create several worker nodes in multipass on top of the master.
+```console
 root@b1s1-node1:~# multipass list
 Name                    State             IPv4             Image
 ubuntu-k8smaster        Running           10.57.89.33      Ubuntu 20.04 LTS
@@ -169,6 +160,16 @@ root@b1s1-node1:~# multipass shell ubuntu-k8sworker-1
 ubuntu@ubuntu-k8sworker-1:~$ sudo snap install microk8s --classic
 microk8s (1.21/stable) v1.21.4 from Canonicalâœ“ installed
 [...]
+```
+And install microk8s on each worker node
+```
+multipass shell ubuntu-k8sworker-1
+sudo snap install microk8s --classic
+sudo usermod -a -G microk8s $USER
+sudo chown -f -R $USER ~/.kube
+exit
+multipass shell ubuntu-k8sworker-1
+sudo snap install microk8s --classic
 ```
 
 On master node, move back to calico (if cilium is running) and get the commands for copy-pasting to worker node
@@ -493,7 +494,22 @@ alpine-7dd86575d6-fk8q4   1/1     Running   0          4m24s
 alpine-7dd86575d6-m6cbg   1/1     Running   0          4m19s
 ubuntu@ubuntu1:/var/snap/microk8s/current/args$ 
 ```
+## Another issue after moving from calico to cilium
 
+After enabling cilium in the multi-node clusters via "microk8s enable cilium", things get broken. A deployment is stuck in "ContainerCreating". Obviously something kubelet can't create the networking interfaces.
+```console
+ubuntu@ubuntu-k8smaster:~$ k get pods
+NAME                                READY   STATUS              RESTARTS   AGE
+nginx-deployment-66b6c48dd5-8tznf   0/1     ContainerCreating   0          36m
+nginx-deployment-66b6c48dd5-vzz99   0/1     ContainerCreating   0          36m
+nginx-deployment-66b6c48dd5-2kzwn   1/1     Running             0          36m
+ubuntu@ubuntu-k8smaster:~$
+ubuntu@ubuntu-k8smaster:~$ k describe  pod nginx-deployment-66b6c48dd5-8tznf
+Name:           nginx-deployment-66b6c48dd5-8tznf
+Namespace:      default
+[...]
+  Warning  FailedCreatePodSandBox  2m17s (x152 over 35m)  kubelet            (combined from similar events): Failed to create pod sandbox: rpc error: code = Unknown desc = failed to setup network for sandbox "b8be46e6b79acf136141d7ceff0c38154b7843d6d81fb7cc894733b9dae013ab": error getting ClusterInformation: connection is unauthorized: Unauthorized
+ubuntu@ubuntu-k8smaster:~$ 
 ```
 
 ## Upgrade
