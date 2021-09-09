@@ -131,7 +131,7 @@ ubuntu@ubuntu1:~$
 ```
 
 You can check the pods that have been created as well as the new crds
-```
+```console
 ubuntu@ubuntu1:~$ k get pods -A
 NAMESPACE     NAME                               READY   STATUS    RESTARTS   AGE
 kube-system   cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          12m
@@ -143,6 +143,7 @@ ciliumendpoints.cilium.io         2021-04-01T10:54:37Z
 ciliumnodes.cilium.io             2021-04-01T10:54:38Z
 ciliumidentities.cilium.io        2021-04-01T10:54:39Z
 ubuntu@ubuntu1:~$ 
+```
 
 ## multi node cluster
 
