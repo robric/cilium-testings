@@ -175,6 +175,52 @@ ciliumendpoints.cilium.io         2021-04-01T10:54:37Z
 ciliumnodes.cilium.io             2021-04-01T10:54:38Z
 ciliumidentities.cilium.io        2021-04-01T10:54:39Z
 ubuntu@ubuntu1:~$ 
+
+ubuntu@ubuntu1:~$ microk8s enable dns
+Enabling DNS
+Applying manifest
+serviceaccount/coredns created
+configmap/coredns created
+deployment.apps/coredns created
+service/kube-dns created
+clusterrole.rbac.authorization.k8s.io/coredns created
+clusterrolebinding.rbac.authorization.k8s.io/coredns created
+Restarting kubelet
+DNS is enabled
+
+ubuntu@ubuntu1:~$ k get pods -n kube-system
+NAME                               READY   STATUS    RESTARTS   AGE
+cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          20m
+cilium-m66m7                       1/1     Running   1          20m
+coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
+ubuntu@ubuntu1:~$ 
+```
+
+## Appendix / Lesson learnt
+
+### Useful adds-on
+- Add core-dns
+ubuntu@ubuntu1:~$ microk8s enable dns
+Enabling DNS
+Applying manifest
+serviceaccount/coredns created
+configmap/coredns created
+deployment.apps/coredns created
+service/kube-dns created
+clusterrole.rbac.authorization.k8s.io/coredns created
+clusterrolebinding.rbac.authorization.k8s.io/coredns created
+Restarting kubelet
+DNS is enabled
+
+ubuntu@ubuntu1:~$ k get pods -n kube-system
+NAME                               READY   STATUS    RESTARTS   AGE
+cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          20m
+cilium-m66m7                       1/1     Running   1          20m
+coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
+ubuntu@ubuntu1:~$ 
+
+### Yet Another CrashLoopBackoff Troubleshooting 
+
 ubuntu@ubuntu1:~$ k create deployment alpine --image=alpine --replicas=2
 deployment.apps/alpine created
 ubuntu@ubuntu1:~$ k get pods
@@ -202,27 +248,7 @@ Events:
   Normal   Started            89s (x3 over 109s)   kubelet            Started container alpine
   Warning  BackOff            88s (x3 over 104s)   kubelet            Back-off restarting failed container
   Warning  MissingClusterDNS  76s (x10 over 116s)  kubelet            pod: "alpine-6b967c77f7-568sf_default(a19f226f-1b15-49b6-b28b-8b3a3bc05a5e)". kubelet does not have ClusterDNS IP configured and cannot create Pod using "ClusterFirst" policy. Falling back to "Default" policy.
-ubuntu@ubuntu1:~$ microk8s enable dns
-Enabling DNS
-Applying manifest
-serviceaccount/coredns created
-configmap/coredns created
-deployment.apps/coredns created
-service/kube-dns created
-clusterrole.rbac.authorization.k8s.io/coredns created
-clusterrolebinding.rbac.authorization.k8s.io/coredns created
-Restarting kubelet
-DNS is enabled
-
-ubuntu@ubuntu1:~$ k get pods -n kube-system
-NAME                               READY   STATUS    RESTARTS   AGE
-cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          20m
-cilium-m66m7                       1/1     Running   1          20m
-coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
-ubuntu@ubuntu1:~$ 
-```
-
-Troubleshooting CrashLoopBackoff. 
+  
 First there is not much info in describe... Unfortunately.
 
 ```console
@@ -418,6 +444,30 @@ alpine-7dd86575d6-fk8q4   1/1     Running   0          4m24s
 alpine-7dd86575d6-m6cbg   1/1     Running   0          4m19s
 ubuntu@ubuntu1:/var/snap/microk8s/current/args$ 
 ```
+## snap/microk8s useful file location
+
+Relevant configuration files are located there. CNI for example !
+
+```
+root@ubuntu-k8smaster:/opt/containerd# cd /var/snap/microk8s/current/args
+root@ubuntu-k8smaster:/var/snap/microk8s/current/args# ls
+cluster-agent  containerd      containerd-template.toml  ctr   flannel-network-mgr-config  flanneld        kube-controller-manager  kube-scheduler  kubectl-env
+cni-network    containerd-env  containerd.toml           etcd  flannel-template.conflist   kube-apiserver  kube-proxy               kubectl         kubelet
+
+```
+
+## Upgrade
+Tried but did not work
+
+```
+ubuntu@ubuntu-k8smaster:/etc$ k version
+Client Version: version.Info{Major:"1", Minor:"19+", GitVersion:"v1.19.13-34+939585d5fb6fa7", GitCommit:"939585d5fb6fa724a79db2b43cff42342706a146", GitTreeState:"clean", BuildDate:"2021-07-16T20:58:41Z", GoVersion:"go1.15.14", Compiler:"gc", Platform:"linux/amd64"}
+Server Version: version.Info{Major:"1", Minor:"19+", GitVersion:"v1.19.13-34+939585d5fb6fa7", GitCommit:"939585d5fb6fa724a79db2b43cff42342706a146", GitTreeState:"clean", BuildDate:"2021-07-16T20:59:39Z", GoVersion:"go1.15.14", Compiler:"gc", Platform:"linux/amd64"}
+
+ubuntu@ubuntu-k8smaster:/etc$ snap install microk8s --classic --channel=1.22/stable
+error: access denied (try with sudo)
+ubuntu@ubuntu-k8smaster:/etc$ sudo snap refresh microk8s --channel=1.21/stable
+Fetch and check assertions for snap "microk8s" (2407)                             ```                                                                                                     \
 
 ## Interesting links and reading
 
