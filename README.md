@@ -227,6 +227,7 @@ k apply -f https://k8s.io/examples/controllers/nginx-deployment.yaml
 
 ### Useful adds-on
 - Add core-dns
+```console
 ubuntu@ubuntu-k8smaster:~$ microk8s enable dns
 Enabling DNS
 Applying manifest
@@ -244,6 +245,26 @@ NAME                               READY   STATUS    RESTARTS   AGE
 cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          20m
 cilium-m66m7                       1/1     Running   1          20m
 coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
+```
+
+## snap/microk8s useful file location
+
+Relevant configuration files are located there. CNI configs and binaries for example !
+
+```
+root@ubuntu-k8smaster:/opt/containerd# cd /var/snap/microk8s/current/args
+root@ubuntu-k8smaster:/var/snap/microk8s/current/args# ls
+cluster-agent  containerd      containerd-template.toml  ctr   flannel-network-mgr-config  flanneld        kube-controller-manager  kube-scheduler  kubectl-env
+cni-network    containerd-env  containerd.toml           etcd  flannel-template.conflist   kube-apiserver  kube-proxy               kubectl         kubelet
+
+root@ubuntu-k8sworker-2:~# cd /var/snap/microk8s/current/opt/cni/bin/
+root@ubuntu-k8sworker-2:/var/snap/microk8s/current/opt/cni/bin# ls
+bandwidth  calico       cilium-cni  firewall  flanneld     host-local  loopback  portmap  sbr     tuning
+bridge     calico-ipam  dhcp        flannel   host-device  ipvlan      macvlan   ptp      static  vlan
+root@ubuntu-k8sworker-2:/var/snap/microk8s/current/opt/cni/bin# ./cilium-cni
+Cilium CNI plugin 1.8.12 b00a133 2021-09-01T12:51:30-07:00 go version go1.14.15 linux/amd64
+root@ubuntu-k8sworker-2:/var/snap/microk8s/current/opt/cni/bin# 
+```
 
 
 ### Yet Another CrashLoopBackoff Troubleshooting 
@@ -472,15 +493,6 @@ alpine-7dd86575d6-fk8q4   1/1     Running   0          4m24s
 alpine-7dd86575d6-m6cbg   1/1     Running   0          4m19s
 ubuntu@ubuntu1:/var/snap/microk8s/current/args$ 
 ```
-## snap/microk8s useful file location
-
-Relevant configuration files are located there. CNI for example !
-
-```
-root@ubuntu-k8smaster:/opt/containerd# cd /var/snap/microk8s/current/args
-root@ubuntu-k8smaster:/var/snap/microk8s/current/args# ls
-cluster-agent  containerd      containerd-template.toml  ctr   flannel-network-mgr-config  flanneld        kube-controller-manager  kube-scheduler  kubectl-env
-cni-network    containerd-env  containerd.toml           etcd  flannel-template.conflist   kube-apiserver  kube-proxy               kubectl         kubelet
 
 ```
 
