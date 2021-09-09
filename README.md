@@ -63,7 +63,7 @@ echo "alias k='microk8s kubectl'" >>~/.bashrc
 echo "complete -F __start_kubectl k" >>~/.bashrc
 sudo bash -c "microk8s kubectl completion bash >/etc/bash_completion.d/kubectl"
 exit
-multipass shell ubuntu1
+multipass shell ubuntu-k8smaster
 ```
 
 To enable Cilium, just type the following command
@@ -151,7 +151,7 @@ ubuntu@ubuntu1:~$
 
 ### Useful adds-on
 - Add core-dns
-ubuntu@ubuntu1:~$ microk8s enable dns
+ubuntu@ubuntu-k8smaster:~$ microk8s enable dns
 Enabling DNS
 Applying manifest
 serviceaccount/coredns created
@@ -163,12 +163,12 @@ clusterrolebinding.rbac.authorization.k8s.io/coredns created
 Restarting kubelet
 DNS is enabled
 
-ubuntu@ubuntu1:~$ k get pods -n kube-system
+ubuntu@ubuntu-k8smaster:~$ k get pods -n kube-system
 NAME                               READY   STATUS    RESTARTS   AGE
 cilium-operator-774f85cdd8-t2mcj   1/1     Running   1          20m
 cilium-m66m7                       1/1     Running   1          20m
 coredns-86f78bb79c-ttj2f           1/1     Running   0          45s
-ubuntu@ubuntu1:~$ 
+
 
 ### Yet Another CrashLoopBackoff Troubleshooting 
 
