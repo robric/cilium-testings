@@ -275,10 +275,32 @@ items:
 [...]
 ```
 Spawn a few pods via deployment. 
-*Warning: I had an issue with cilium on worker nodes (see in appendix how to fix that).*
+*Warning: I had an issue with cilium on worker nodes (see in appendix to fix that).*
 
 ```
 k apply -f https://k8s.io/examples/controllers/nginx-deployment.yaml
+```
+## Explorations
+
+### First pings from node-to-node
+
+By default, pod to pod traffic is overlay (VXLAN) with port 8472. This is NOT the IANA VXLAN 4789 port, but the default kernel port for VXLAN. This port is registered as Overlay Transport Virtualization (OVT).
+
+Run an alpine pod in a dedicated terminal for testings.
+
+```
+k run -it --rm --restart=Never --image=alpine alpine -- /bin/ash
+```
+So you get an alpine pod from which you can issue inter-node pings. From the below capture, we see that the alpine pod runs on worker-1. So we will ping the nginx pod with IP address 10.0.1.199 on node worker-1.
+
+```console
+ubuntu@ubuntu-k8smaster:~$ k get pods -o wide
+NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                 NOMINATED NODE   READINESS GATES
+nginx-deployment-66b6c48dd5-2kzwn   1/1     Running   0          21h   10.0.0.107   ubuntu-k8smaster     <none>           <none>
+nginx-deployment-66b6c48dd5-8tznf   1/1     Running   1          21h   10.0.1.199   ubuntu-k8sworker-1   <none>           <none>
+nginx-deployment-66b6c48dd5-vzz99   1/1     Running   0          21h   10.0.2.174   ubuntu-k8sworker-2   <none>           <none>
+alpine                              1/1     Running   0          7s    10.0.1.123   ubuntu-k8sworker-1   <none>           <none>
+ubuntu@ubuntu-k8smaster:~$ 
 ```
 
 
@@ -686,6 +708,29 @@ nginx-deployment-66b6c48dd5-2kzwn   1/1     Running   0          5h34m   10.0.0.
 nginx-deployment-66b6c48dd5-8tznf   1/1     Running   1          5h34m   10.0.1.199   ubuntu-k8sworker-1   <none>           <none>
 nginx-deployment-66b6c48dd5-vzz99   1/1     Running   0          5h34m   10.0.2.174   ubuntu-k8sworker-2   <none>           <none>
 ubuntu@ubuntu-k8smaster:/var/snap/microk8s/2407/args/cni-network$ 
+```
+### kube-dns breaks
+
+At some point, core-dns was stuck to crashloopbackoff. This can be fixed with disabling/re-enabling dns in microk8s
+
+```
+microk8s disable dns
+microk8s enable dns
+```
+
+```
+
+#### Before
+
+ubuntu@ubuntu-k8smaster:~$ k get pods -o wide -A | grep dns
+kube-system   coredns-7f9c69c78c-zgmdg            0/1     CrashLoopBackOff   309        23h     10.0.0.226     ubuntu-k8smaster     <none>           <none>
+ubuntu@ubuntu-k8smaster:~$
+
+#### After
+
+ubuntu@ubuntu-k8smaster:~$ k get pods -o wide -A | grep dns
+kube-system   coredns-7f9c69c78c-2gsmj            1/1     Running   0          116s   10.0.0.175     ubuntu-k8smaster     <none>           <none>
+ubuntu@ubuntu-k8smaster:~$ 
 ```
 
 ## Upgrade
