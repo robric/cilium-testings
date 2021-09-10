@@ -286,12 +286,12 @@ k apply -f https://k8s.io/examples/controllers/nginx-deployment.yaml
 
 By default, pod to pod traffic is overlay (VXLAN) with port 8472. This is NOT the IANA VXLAN 4789 port, but the default kernel port for VXLAN. This port is registered as Overlay Transport Virtualization (OVT).
 
-Run an alpine pod in a dedicated terminal for testings.
+Run an alpine pod in a dedicated terminal for testings and launch pings to another pod
 
 ```
 k run -it --rm --restart=Never --image=alpine alpine -- /bin/ash
 ```
-So you get an alpine pod from which you can issue inter-node pings. From the below capture, we see that the alpine pod runs on worker-1. So we will ping the nginx pod with IP address 10.0.1.199 on node worker-1.
+So you get an alpine pod from which you can issue inter-node pings. From the below capture, we see that the alpine pod runs on worker-1. So we will ping the nginx pod with IP address 10.0.2.174 on node worker-2 and get soe tcpdump trace to start with.
 
 ```console
 ubuntu@ubuntu-k8smaster:~$ k get pods -o wide
@@ -301,8 +301,37 @@ nginx-deployment-66b6c48dd5-8tznf   1/1     Running   1          21h   10.0.1.19
 nginx-deployment-66b6c48dd5-vzz99   1/1     Running   0          21h   10.0.2.174   ubuntu-k8sworker-2   <none>           <none>
 alpine                              1/1     Running   0          7s    10.0.1.123   ubuntu-k8sworker-1   <none>           <none>
 ubuntu@ubuntu-k8smaster:~$ 
-```
 
+#### In the Alpine pod
+
+/ # / # ping 10.0.2.174
+PING 10.0.2.174 (10.0.2.174): 56 data bytes
+64 bytes from 10.0.2.174: seq=0 ttl=63 time=1.134 ms
+64 bytes from 10.0.2.174: seq=1 ttl=63 time=0.991 ms
+64 bytes from 10.0.2.174: seq=2 ttl=63 time=1.091 ms
+^C
+
+#### On worker-1 node, tcpdump at VM NIC.
+07:03:01.173093 IP (tos 0x0, ttl 64, id 59607, offset 0, flags [none], proto UDP (17), length 134)
+    10.57.89.165.58900 > 10.57.89.205.8472: [no cksum] OTV, flags [I] (0x08), overlay 0, instance 14957
+IP (tos 0x0, ttl 64, id 41038, offset 0, flags [DF], proto ICMP (1), length 84)
+    10.0.1.123 > 10.0.2.174: ICMP echo request, id 28, seq 3, length 64
+07:03:01.173861 IP (tos 0x0, ttl 64, id 21238, offset 0, flags [none], proto UDP (17), length 134)
+    10.57.89.205.51735 > 10.57.89.165.8472: [no cksum] OTV, flags [I] (0x08), overlay 0, instance 3540
+IP (tos 0x0, ttl 64, id 44001, offset 0, flags [none], proto ICMP (1), length 84)
+    10.0.2.174 > 10.0.1.123: ICMP echo reply, id 28, seq 3, length 64
+```
+TCPdump decodes VXLAN as OTV - there is nothing fancy here - :
+- Inner SRC and DST are the pods: no NAT thanks to overlay 
+- Tunnel SRC/DST are the regular node IPs
+```console
+ubuntu@ubuntu-k8smaster:~$ k get nodes -o wide
+NAME                 STATUS   ROLES    AGE   VERSION                    INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+ubuntu-k8sworker-2   Ready    <none>   22h   v1.21.4-3+e5758f73ed2a04   10.57.89.205   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu-k8sworker-1   Ready    <none>   23h   v1.21.4-3+e5758f73ed2a04   10.57.89.165   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu-k8smaster     Ready    <none>   24h   v1.21.4-3+e5758f73ed2a04   10.57.89.33    <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
+ubuntu@ubuntu-k8smaster:~$ 
+```
 
 ## Appendix / Lesson learnt
 
