@@ -2,7 +2,7 @@
 
 ## Objectives
 
-The objective is simply to have a look at Cilium by installing it in a set of microk8s VMs.
+This objective is simply to have a look at Cilium by installing it in a microk8s VM.
 
 ## Testing Infrastructure
 
@@ -15,8 +15,8 @@ NAME="Ubuntu"
 VERSION="20.04.1 LTS (Focal Fossa)"
 ID=ubuntu
 ```
-## Deployment
-### VM installation
+
+## VM installation
 
 Install multipass via snap for Virtual Machine Instantiation
 
@@ -42,7 +42,7 @@ ubuntu-k8sworker-1      Running           10.57.89.165     Ubuntu 20.04 LTS
 ubuntu-k8sworker-2      Running           10.57.89.205     Ubuntu 20.04 LTS```
 ```
 
-### Microk8s Install (single/master node)
+## Microk8s Install 
 Type
 ```
 multipass shell ubuntu-k8smaster
@@ -148,12 +148,10 @@ ciliumidentities.cilium.io        2021-04-01T10:54:39Z
 ubuntu@ubuntu1:~$ 
 ```
 
-### Multi node cluster
+## multi node cluster
 
-The deployment of multi node cluster based on cilium did not work out of the box, but things can be fixed manually to get it working.
-
-Deploy microk8s kubernetees the additional nodes (worker) with the appropriate permission settings.
-
+Deploy microk8s kubernetees on a second node (worker) and the appropriate permission settings.
+Create several worker nodes in multipass on top of the master.
 ```console
 root@b1s1-node1:~# multipass list
 Name                    State             IPv4             Image
@@ -225,7 +223,56 @@ NAME                 STATUS   ROLES    AGE     VERSION                    INTERN
 ubuntu-k8sworker-1   Ready    <none>   50m     v1.21.4-3+e5758f73ed2a04   10.57.89.165   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
 ubuntu-k8smaster     Ready    <none>   151m    v1.21.4-3+e5758f73ed2a04   10.57.89.33    <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
 ubuntu-k8sworker-2   Ready    <none>   4m47s   v1.21.4-3+e5758f73ed2a04   10.57.89.205   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
-ubuntu@ubuntu-k8smaster:/etc$ 
+
+ubuntu@ubuntu-k8smaster:~$ k get ciliumnodes
+NAME                 AGE
+ubuntu-k8smaster     20h
+ubuntu-k8sworker-1   18h
+ubuntu-k8sworker-2   18h
+ubuntu@ubuntu-k8smaster:~$ k get ciliumnodes -o yaml
+apiVersion: v1
+items:
+- apiVersion: cilium.io/v2
+  kind: CiliumNode
+  metadata:
+    creationTimestamp: "2021-09-09T13:21:11Z"
+    generation: 7
+    labels:
+      beta.kubernetes.io/arch: amd64
+      beta.kubernetes.io/os: linux
+      kubernetes.io/arch: amd64
+      kubernetes.io/hostname: ubuntu-k8smaster
+      kubernetes.io/os: linux
+      microk8s.io/cluster: "true"
+    name: ubuntu-k8smaster
+    ownerReferences:
+    - apiVersion: v1
+      kind: Node
+      name: ubuntu-k8smaster
+      uid: c4c6d104-c328-44ba-aeef-e93e9d2d8c86
+    resourceVersion: "15843"
+    selfLink: /apis/cilium.io/v2/ciliumnodes/ubuntu-k8smaster
+    uid: 4209a4d2-b754-4d59-a858-1ae32e3462e0
+  spec:
+    addresses:
+    - ip: 10.57.89.33
+      type: InternalIP
+    - ip: 10.0.0.199
+      type: CiliumInternalIP
+    azure: {}
+    encryption: {}
+    eni: {}
+    health:
+      ipv4: 10.0.0.238
+    ipam:
+      podCIDRs:
+      - 10.0.0.0/24
+  status:
+    azure: {}
+    eni: {}
+    ipam:
+      operator-status: {}
+[...]
 ```
 Spawn a few pods via deployment. 
 *Warning: I had an issue with cilium on worker nodes (see in appendix how to fix that).*
@@ -233,6 +280,7 @@ Spawn a few pods via deployment.
 ```
 k apply -f https://k8s.io/examples/controllers/nginx-deployment.yaml
 ```
+
 
 ## Appendix / Lesson learnt
 
