@@ -2,7 +2,7 @@
 
 ## Objectives
 
-This objective is simply to have a look at Cilium by installing it in a set of microk8s VMs.
+The objective is simply to have a look at Cilium by installing it in a set of microk8s VMs.
 
 ## Testing Infrastructure
 
@@ -15,8 +15,8 @@ NAME="Ubuntu"
 VERSION="20.04.1 LTS (Focal Fossa)"
 ID=ubuntu
 ```
-
-## VM installation
+## Deployment
+### VM installation
 
 Install multipass via snap for Virtual Machine Instantiation
 
@@ -42,7 +42,7 @@ ubuntu-k8sworker-1      Running           10.57.89.165     Ubuntu 20.04 LTS
 ubuntu-k8sworker-2      Running           10.57.89.205     Ubuntu 20.04 LTS```
 ```
 
-## Microk8s Install (single/master node)
+### Microk8s Install (single/master node)
 Type
 ```
 multipass shell ubuntu-k8smaster
@@ -148,7 +148,9 @@ ciliumidentities.cilium.io        2021-04-01T10:54:39Z
 ubuntu@ubuntu1:~$ 
 ```
 
-## Multi node cluster
+### Multi node cluster
+
+The deployment of multi node cluster based on cilium did not work out of the box, but things can be fixed manually to get it working.
 
 Deploy microk8s kubernetees the additional nodes (worker) with the appropriate permission settings.
 
@@ -225,7 +227,12 @@ ubuntu-k8smaster     Ready    <none>   151m    v1.21.4-3+e5758f73ed2a04   10.57.
 ubuntu-k8sworker-2   Ready    <none>   4m47s   v1.21.4-3+e5758f73ed2a04   10.57.89.205   <none>        Ubuntu 20.04.2 LTS   5.4.0-80-generic   containerd://1.4.4
 ubuntu@ubuntu-k8smaster:/etc$ 
 ```
+Spawn a few pods via deployment. 
+*Warning: I had an issue with cilium on worker nodes (see in appendix how to fix that).*
+
+```
 k apply -f https://k8s.io/examples/controllers/nginx-deployment.yaml
+```
 
 ## Appendix / Lesson learnt
 
