@@ -321,7 +321,8 @@ IP (tos 0x0, ttl 64, id 41038, offset 0, flags [DF], proto ICMP (1), length 84)
 IP (tos 0x0, ttl 64, id 44001, offset 0, flags [none], proto ICMP (1), length 84)
     10.0.2.174 > 10.0.1.123: ICMP echo reply, id 28, seq 3, length 64
 ```
-TCPdump decodes VXLAN as OTV - there is nothing fancy here - :
+There is nothing fancy here
+- TCPdump decodes VXLAN as OTV
 - Inner SRC and DST are the pods: no NAT thanks to overlay 
 - Tunnel SRC/DST are the regular node IPs
 ```console
